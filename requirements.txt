@@ -2,4 +2,3 @@ streamlit
 pandas
 openpyxl
 psycopg2
-import base64
