@@ -20,7 +20,7 @@ if uploaded_file is not None:
 
     if st.button("Preencher valores"):
         # Preencher os valores nulos com base nas colunas selecionadas
-        df[colunas_selecionadas] = df.groupby('companyName')[colunas_selecionadas].fillna(method='ffill')
+        df[colunas_selecionadas] = df.groupby('name')[colunas_selecionadas].fillna(method='ffill')
 
         # Remover linhas duplicadas mantendo apenas a primeira ocorrência
         df.drop_duplicates(subset=['name'], keep='last', inplace=True)
