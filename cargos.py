@@ -28,7 +28,7 @@ if uploaded_file is not None:
         # Exibir o dataframe resultante
         st.subheader('Dataframe Atualizado')
         st.dataframe(df)
-        del df['Unnamed: 13']
+        #del df['Unnamed: 13']
 
         # Gerar o link de download
         csv = df.to_csv(index=False)
