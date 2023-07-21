@@ -52,7 +52,7 @@ if uploaded_file is not None:
         try:
             # Conectar ao banco de dados
             #conn = psycopg2.connect(host=db_host, user=db_user, password=db_password, database=db_database)
-            #conn = psycopg2.connect(**st.secrets["database"])
+            conn = init_connection()
             cursor = conn.cursor()
 
             # Para cada funcionário no DataFrame, consulte o banco de dados e insira o nome da empresa ou "Dados Incompletos"
