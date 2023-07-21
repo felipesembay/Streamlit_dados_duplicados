@@ -4,14 +4,22 @@ import psycopg2
 import base64
 
 # main.py
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import os
 
-load_dotenv()  # take environment variables from .env.
-db_host = os.getenv('DB_HOST')
-db_user = os.getenv('DB_USER')
-db_password = os.getenv('DB_PASSWORD')
-db_database = os.getenv('DB_DATABASE')
+#load_dotenv()  # take environment variables from .env.
+#db_host = os.getenv('DB_HOST')
+#db_user = os.getenv('DB_USER')
+#db_password = os.getenv('DB_PASSWORD')
+#db_database = os.getenv('DB_DATABASE')
+
+import toml
+
+config = toml.load('config.toml')
+db_host = config['database']['DB_HOST']
+db_user = config['database']['DB_USER']
+db_password = config['database']['DB_PASSWORD']
+db_database = config['database']['DB_DATABASE']
 
 st.title('Adicionador de Profissão do banco de dados no arquivo csv/xlsx')
 
