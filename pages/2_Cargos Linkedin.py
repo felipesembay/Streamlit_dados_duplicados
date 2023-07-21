@@ -5,19 +5,13 @@ import psycopg2
 from datetime import datetime
 import numpy as np
 import os
-from dotenv import load_dotenv
+import toml
 
-load_dotenv()  # carrega as variáveis de ambiente do arquivo .env
-
-#db_host = os.getenv("db_host")
-#db_user = os.getenv("db_user")
-#db_password = os.getenv("db_password")
-#db_database = os.getenv("db_database")
-
-db_host = '172.17.0.2'
-db_user = 'postgres'
-db_password = 'airflow'
-db_database = 'charisma'
+config = toml.load('config.toml')
+db_host = config['database']['DB_HOST']
+db_user = config['database']['DB_USER']
+db_password = config['database']['DB_PASSWORD']
+db_database = config['database']['DB_DATABASE']
 
 # Título do aplicativo
 st.title('Adicionador de Profissão')
