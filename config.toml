@@ -1,5 +1,0 @@
-[database]
-DB_HOST = "177.92.115.138"
-DB_USER = "postgres"
-DB_PASSWORD = "Charisma2022"
-DB_DATABASE = "charisma"
