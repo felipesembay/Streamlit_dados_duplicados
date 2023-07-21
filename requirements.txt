@@ -3,4 +3,3 @@ streamlit
 pandas
 openpyxl
 psycopg2-binary
-os
