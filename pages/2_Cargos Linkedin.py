@@ -13,6 +13,11 @@ import os
 #db_password = config['database']['DB_PASSWORD']
 #db_database = config['database']['DB_DATABASE']
 
+db_host = st.secrets["DB_HOST"]
+db_user = st.secrets["DB_USER"]
+db_password = st.secrets["DB_PASSWORD"]
+db_database = st.secrets["DB_DATABASE"]
+
 # Título do aplicativo
 st.title('Adicionador de Profissão')
 
@@ -45,8 +50,8 @@ if uploaded_file is not None:
 
         # Salvar as informações no banco de dados PostgreSQL
         try:
-            #conn = psycopg2.connect(host=db_host, user=db_user, password=db_password, database=db_database)
-            conn = psycopg2.connect(**st.secrets["database"])
+            conn = psycopg2.connect(host=db_host, user=db_user, password=db_password, dbname=db_database)
+            #conn = psycopg2.connect(**st.secrets["database"])
             cursor = conn.cursor()
 
             rows_updated_or_inserted = 0
