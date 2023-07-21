@@ -3,7 +3,21 @@ import pandas as pd
 import base64
 import psycopg2
 from datetime import datetime
-from configdb import db_host, db_user, db_password, db_database
+import numpy as np
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # carrega as variáveis de ambiente do arquivo .env
+
+#db_host = os.getenv("db_host")
+#db_user = os.getenv("db_user")
+#db_password = os.getenv("db_password")
+#db_database = os.getenv("db_database")
+
+db_host = '172.17.0.2'
+db_user = 'postgres'
+db_password = 'airflow'
+db_database = 'charisma'
 
 # Título do aplicativo
 st.title('Adicionador de Profissão')
@@ -23,12 +37,11 @@ if uploaded_file is not None:
         df[colunas_selecionadas] = df.groupby('name')[colunas_selecionadas].fillna(method='ffill')
 
         # Remover linhas duplicadas mantendo apenas a primeira ocorrência
-        df.drop_duplicates(subset=['name'], keep='last', inplace=True)
+        #df.drop_duplicates(subset=['name'], keep='first', inplace=True)
 
         # Exibir o dataframe resultante
         st.subheader('Dataframe Atualizado')
         st.dataframe(df)
-        #del df['Unnamed: 13']
 
         # Gerar o link de download
         csv = df.to_csv(index=False)
@@ -41,6 +54,8 @@ if uploaded_file is not None:
             conn = psycopg2.connect(host=db_host, user=db_user, password=db_password, database=db_database)
             cursor = conn.cursor()
 
+            rows_updated_or_inserted = 0
+
             # Verificar e adicionar os registros no banco
             for _, row in df.iterrows():
                 nome = row['name']
@@ -48,26 +63,30 @@ if uploaded_file is not None:
                 link_url = row['profileLink']
                 horario_salvamento = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                # Verificar se o registro já existe para o funcionário e empresa no banco
-                query = f"SELECT * FROM linkedin WHERE nome = '{nome}' AND empresa = '{empresa}'"
+                # Verificar se o registro já existe para o funcionário no banco
+                query = f"SELECT * FROM linkedin WHERE nome = '{nome}'"
                 cursor.execute(query)
                 result = cursor.fetchone()
 
-                if result is not None:
-                    horario_salvamento_bd = result[3]
-                    if horario_salvamento > horario_salvamento_bd:
-                        query = f"UPDATE linkedin SET link_url = '{link_url}', horario_salvamento = '{horario_salvamento}' WHERE nome = '{nome}' AND empresa = '{empresa}'"
+                # Verifique se nome e empresa não são None ou Nan antes de inserir ou atualizar
+                if pd.notna(nome) and pd.notna(empresa):
+                    if result is not None:
+                        # Atualizar a empresa no banco
+                        query = f"UPDATE linkedin SET empresa = '{empresa}' WHERE nome = '{nome}'"
                         cursor.execute(query)
                         conn.commit()
-                else:
-                    # Adicionar o registro no banco
-                    query = f"INSERT INTO linkedin (nome, empresa, link_url, horario_salvamento) VALUES ('{nome}', '{empresa}', '{link_url}', '{horario_salvamento}')"
-                    cursor.execute(query)
-                    conn.commit()
+                        rows_updated_or_inserted += 1
+                    else:
+                        # Adicionar o registro no banco
+                        query = f"INSERT INTO linkedin (nome, empresa, link_url, horario_salvamento) VALUES ('{nome}', '{empresa}', '{link_url}', '{horario_salvamento}')"
+                        cursor.execute(query)
+                        conn.commit()
+                        rows_updated_or_inserted += 1
 
             cursor.close()
             conn.close()
 
-            st.success("As informações foram salvas no banco de dados.")
+            st.success(f"As informações foram salvas no banco de dados. {rows_updated_or_inserted} linhas foram inseridas ou atualizadas.")
         except psycopg2.Error as error:
             st.error(f"Ocorreu um erro ao conectar-se ao banco de dados: {error}")
+

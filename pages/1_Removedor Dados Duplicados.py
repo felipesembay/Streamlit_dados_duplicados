@@ -11,12 +11,16 @@ def get_table_download_link(df):
     b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
     return f'<a href="data:file/csv;base64,{b64}" download="data.csv">Download CSV file</a>'
 
-uploaded_file = st.file_uploader("Selecione um arquivo", type=['xlsx'])
+uploaded_file = st.file_uploader("Selecione um arquivo", type=['xlsx', 'csv'])
 
 if uploaded_file is not None:
-    # Ler o arquivo carregado como um DataFrame
+    # Verificar o tipo do arquivo e lê-lo como um DataFrame
     try:
-        df = pd.read_excel(uploaded_file, engine='openpyxl')
+        if uploaded_file.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            df = pd.read_excel(uploaded_file, engine='openpyxl')
+        elif uploaded_file.type == 'text/csv':
+            df = pd.read_csv(uploaded_file)
+            
         if 'Publicado por' in df.columns:
             df['Publicado por'] = df['Publicado por'].astype(str)
         st.write(f"O arquivo tem {df.shape[0]} linhas e {df.shape[1]} colunas.")
