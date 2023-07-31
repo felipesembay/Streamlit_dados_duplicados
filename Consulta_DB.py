@@ -23,7 +23,7 @@ if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
     elif uploaded_file.type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
         df = pd.read_excel(uploaded_file, engine='openpyxl')
-    
+
     st.subheader('Dataframe Original')
     st.dataframe(df)
 
@@ -36,13 +36,20 @@ if uploaded_file is not None:
                 nome = row['name']
                 link_url = row['profileLink']
 
-                query = f"SELECT empresa FROM linkedin WHERE nome = '{nome}' OR link_url = '{link_url}'"
-                cursor.execute(query)
+                query = "SELECT nome, empresa, link_url FROM linkedin WHERE nome = %s OR link_url = %s"
+                cursor.execute(query, (nome, link_url))
                 result = cursor.fetchone()
 
                 if result is not None:
-                    if pd.notna(result[0]):
-                        df.loc[index, 'companyName'] = result[0]
+                    nome_db, empresa_db, link_url_db = result
+
+                    if nome_db == nome and link_url_db != link_url:
+                        query = "UPDATE linkedin SET observacao = 'Divergência de link do perfil' WHERE nome = %s"
+                        cursor.execute(query, (nome,))
+                        conn.commit()
+                        df.loc[index, 'companyName'] = 'Divergência de link do perfil'
+                    elif pd.notna(empresa_db):
+                        df.loc[index, 'companyName'] = empresa_db
                     else:
                         df.loc[index, 'companyName'] = 'Dados Incompletos'
 
