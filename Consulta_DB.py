@@ -25,10 +25,9 @@ if uploaded_file is not None:
     st.dataframe(df)
 
     if st.button("Consultar no Banco de Dados"):
+        conn = init_connection()
+        cursor = conn.cursor()
         try:
-            conn = init_connection()
-            cursor = conn.cursor()
-
             for index, row in df.iterrows():
                 nome = row['name']
                 link_url = row['profileLink']
@@ -54,8 +53,10 @@ if uploaded_file is not None:
             st.dataframe(df)
             st.markdown(get_table_download_link(df), unsafe_allow_html=True)
 
+        except psycopg2.Error as error:
+            st.error(f"Ocorreu um erro ao conectar-se ao banco de dados: {error}")
+
+        finally:
             cursor.close()
             conn.close()
 
-        except psycopg2.Error as error:
-            st.error(f"Ocorreu um erro ao conectar-se ao banco de dados: {error}")
