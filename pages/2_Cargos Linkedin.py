@@ -5,6 +5,8 @@ import psycopg2
 from datetime import datetime
 import numpy as np
 
+st.sidebar.image("charisma.jpeg")
+
 def init_connection():
     return psycopg2.connect(**st.secrets["postgres"])
 

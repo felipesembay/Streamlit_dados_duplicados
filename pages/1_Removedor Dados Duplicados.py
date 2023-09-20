@@ -3,6 +3,7 @@ import pandas as pd
 from io import BytesIO
 import base64
 
+st.sidebar.image("charisma.jpeg")
 st.title('Removedor de dados duplicados')
 
 def get_table_download_link(df):

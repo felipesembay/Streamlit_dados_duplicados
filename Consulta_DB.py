@@ -3,6 +3,8 @@ import pandas as pd
 import psycopg2
 import base64
 
+st.sidebar.image("charisma.jpeg")
+
 def init_connection():
     return psycopg2.connect(**st.secrets["postgres"])
 
