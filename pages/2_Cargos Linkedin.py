@@ -44,6 +44,9 @@ if uploaded_file is not None:
             conn = init_connection()
             cursor = conn.cursor()
 
+            table_name = "linkedin"
+            column_name = "registro_id"
+
             rows_updated_or_inserted = 0
             rows_with_divergent_links = 0
 
