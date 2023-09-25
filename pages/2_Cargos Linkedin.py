@@ -10,7 +10,10 @@ st.sidebar.image("charisma.jpeg")
 def init_connection():
     return psycopg2.connect(**st.secrets["postgres"])
 
+# Título do aplicativo
 st.title('Adicionador de Profissão')
+
+tabela_empresa = st.text_input("Informe a empresa associada a esses dados:")
 
 # Carregar arquivo CSV
 uploaded_file = st.file_uploader('Selecione um arquivo CSV', type=['csv'])
@@ -23,23 +26,24 @@ if uploaded_file is not None:
     colunas_selecionadas = st.multiselect("Selecione as colunas para preencher valores", colunas)
 
     if st.button("Preencher valores"):
-        conn = init_connection()  # Abra uma nova conexão
-        cursor = conn.cursor()
+        # Preencher os valores nulos com base nas colunas selecionadas
+        df[colunas_selecionadas] = df.groupby('name')[colunas_selecionadas].fillna(method='ffill')
+
+        # Exibir o dataframe resultante
+        st.subheader('Dataframe Atualizado')
+        st.dataframe(df)
+
+        # Gerar o link de download
+        csv = df.to_csv(index=False)
+        b64 = base64.b64encode(csv.encode()).decode()
+        href = f'<a href="data:file/csv;base64,{b64}" download="data.csv">Clique aqui para baixar o arquivo CSV</a>'
+        st.markdown(href, unsafe_allow_html=True)
+
+        # Salvar as informações no banco de dados PostgreSQL
         try:
-            # Preencher os valores nulos com base nas colunas selecionadas
-            df[colunas_selecionadas] = df.groupby('name')[colunas_selecionadas].fillna(method='ffill')
+            conn = psycopg2.connect(host=db_host, user=db_user, password=db_password, database=db_database)
+            cursor = conn.cursor()
 
-            # Exibir o dataframe resultante
-            st.subheader('Dataframe Atualizado')
-            st.dataframe(df)
-
-            # Gerar o link de download
-            csv = df.to_csv(index=False)
-            b64 = base64.b64encode(csv.encode()).decode()
-            href = f'<a href="data:file/csv;base64,{b64}" download="data.csv">Clique aqui para baixar o arquivo CSV</a>'
-            st.markdown(href, unsafe_allow_html=True)
-
-            # Salvar as informações no banco de dados PostgreSQL
             rows_updated_or_inserted = 0
             rows_with_divergent_links = 0
 
@@ -59,36 +63,33 @@ if uploaded_file is not None:
     
                 horario_salvamento = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+
                 # Verificar se o registro já existe para o funcionário no banco
-                query = f"SELECT nome, link_url FROM linkedin WHERE nome = '{nome}'"
+                query = f"SELECT link_url FROM linkedin WHERE link_url = '{link_url}'"
                 cursor.execute(query)
                 result = cursor.fetchone()
 
                 # Verifique se nome e empresa não são None ou Nan antes de inserir ou atualizar
                 if pd.notna(nome) and pd.notna(empresa):
                     if result is not None:
-                        nome_db, link_url_db = result
-                        if nome_db == nome and link_url_db == link_url:
-                            # Atualizar a empresa no banco
-                            query = f"UPDATE linkedin SET empresa = '{empresa}' WHERE nome = '{nome}'"
-                            cursor.execute(query)
-                            conn.commit()
-                            rows_updated_or_inserted += 1
-                        else:
-                            # Divergência encontrada entre nome e link do perfil
-                            rows_with_divergent_links += 1
+                        # Atualizar a empresa no banco, usando link_url como condição
+                        query = f"UPDATE linkedin SET empresa = '{empresa}', nome = '{nome}' WHERE link_url = '{link_url}'"
+                        cursor.execute(query)
+                        conn.commit()
+                        rows_updated_or_inserted += 1
                     else:
                         # Adicionar o registro no banco
-                        query = f"INSERT INTO linkedin (nome, empresa, link_url, horario_salvamento) VALUES ('{nome}', '{empresa}', '{link_url}', '{horario_salvamento}')"
+                        query = f"INSERT INTO linkedin (nome, empresa, link_url, horario_salvamento, empresa_tabela) VALUES ('{nome}', '{empresa}', '{link_url}', '{horario_salvamento}', '{tabela_empresa}')"
                         cursor.execute(query)
                         conn.commit()
                         rows_updated_or_inserted += 1
 
+            cursor.close()
+            conn.close()
+
             st.success(f"As informações foram salvas no banco de dados. {rows_updated_or_inserted} linhas foram inseridas ou atualizadas.")
             if rows_with_divergent_links > 0:
                 st.warning(f"{rows_with_divergent_links} linhas tinham divergência entre nome e link do perfil e foram ignoradas.")
+
         except psycopg2.Error as error:
             st.error(f"Ocorreu um erro ao conectar-se ao banco de dados: {error}")
-        finally:
-            cursor.close()
-            conn.close()  # Feche a conexão quando terminar

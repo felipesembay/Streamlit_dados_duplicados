@@ -27,29 +27,33 @@ if uploaded_file is not None:
     st.dataframe(df)
 
     if st.button("Consultar no Banco de Dados"):
-        conn = init_connection()
-        cursor = conn.cursor()
+        conn = cursor = None
         try:
+            conn = init_connection()
+            cursor = conn.cursor()
+            
             for index, row in df.iterrows():
                 nome = row['name']
                 link_url = row['profileLink']
 
-                query = "SELECT nome, empresa, link_url FROM linkedin WHERE nome = %s OR link_url = %s"
-                cursor.execute(query, (nome, link_url))
+                query = "SELECT nome, empresa, link_url FROM linkedin WHERE link_url = %s"
+                cursor.execute(query, (link_url,))
                 result = cursor.fetchone()
 
                 if result is not None:
                     nome_db, empresa_db, link_url_db = result
 
-                    if nome_db == nome and link_url_db != link_url:
-                        query = "UPDATE linkedin SET observacao = 'Divergência de link do perfil' WHERE nome = %s"
-                        cursor.execute(query, (nome,))
+                    if nome_db != nome:
+                        query = "UPDATE linkedin SET observacao = 'Divergência de link do perfil' WHERE link_url = %s"
+                        cursor.execute(query, (link_url,))
                         conn.commit()
                         df.loc[index, 'companyName'] = 'Divergência de link do perfil'
                     elif pd.notna(empresa_db):
                         df.loc[index, 'companyName'] = empresa_db
                     else:
                         df.loc[index, 'companyName'] = 'Dados Incompletos'
+            cursor.close()
+            conn.close()
 
             st.subheader('Dataframe Atualizado')
             st.dataframe(df)
@@ -59,6 +63,7 @@ if uploaded_file is not None:
             st.error(f"Ocorreu um erro ao conectar-se ao banco de dados: {error}")
 
         finally:
-            cursor.close()
-            conn.close()
-
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
