@@ -41,7 +41,7 @@ if uploaded_file is not None:
 
         # Salvar as informações no banco de dados PostgreSQL
         try:
-            conn = psycopg2.connect(host=db_host, user=db_user, password=db_password, database=db_database)
+            conn = init_connection()
             cursor = conn.cursor()
 
             rows_updated_or_inserted = 0
